@@ -1,0 +1,44 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
+# Load the dataset
+df = pd.read_csv('reuters_headlines.csv')
+
+# Convert the 'Time' column to datetime format
+df['Time'] = pd.to_datetime(df['Time'])
+
+# Initialize the sentiment analyzer
+analyzer = SentimentIntensityAnalyzer()
+
+# Function to compute sentiment scores using VADER
+def get_sentiment_score(text):
+    return analyzer.polarity_scores(text)['compound']
+
+# Apply the VADER sentiment analysis to the headlines
+df['Sentiment_Score'] = df['Headlines'].apply(get_sentiment_score)
+
+# Generate a synthetic target variable (for demonstration)
+# Let's assume that a positive sentiment score indicates the stock price will go up (1), otherwise it will go down (0)
+df['Target'] = df['Sentiment_Score'].apply(lambda x: 1 if x > 0 else 0)
+
+# Feature and target
+X = df[['Sentiment_Score']]
+y = df['Target']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a simple Logistic Regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Predict and evaluate
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+# Output model accuracy and classification report
+print(f'Accuracy: {accuracy:.2f}')
+print(classification_report(y_test, y_pred))
